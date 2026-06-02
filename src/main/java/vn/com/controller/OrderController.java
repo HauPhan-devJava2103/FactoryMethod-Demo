@@ -1,11 +1,17 @@
 package vn.com.controller;
 
-import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import vn.com.model.Order;
+import vn.com.model.OrderItem;
 import vn.com.model.Product;
+import vn.com.utils.EPaymentMethod;
+import vn.com.utils.EPaymentStatus;
 import vn.com.view.OrderPreparationView;
+import vn.com.view.OrderSuccessView;
 
 public class OrderController {
     private OrderPreparationView view;
@@ -21,21 +27,24 @@ public class OrderController {
      * Fetch order data
      */
     public List<Product> getMockOrderProducts() {
-        // Sau này đoạn này sẽ đổi thành: return orderService.getCartItems();
+        // TODO: call service get order prepare data
         Product p1 = new Product();
         p1.setId(1L);
         p1.setName("Sách Lập Trình Java Swing");
         p1.setPrice(150000.0);
+        p1.setQuantity(1);
 
         Product p2 = new Product();
         p2.setId(2L);
         p2.setName("Bút Bi Xanh");
         p2.setPrice(5000.0);
+        p2.setQuantity(5);
 
         Product p3 = new Product();
         p3.setId(3L);
         p3.setName("Sổ Tay Bìa Da");
         p3.setPrice(45000.0);
+        p3.setQuantity(2);
 
         return Arrays.asList(p1, p2, p3);
     }
@@ -46,19 +55,58 @@ public class OrderController {
     public String calculateTotalAmount(List<Product> products) {
         double total = 0;
         for (Product product : products) {
-            total += product.getPrice();
+            total += product.getTotalAmount();
         }
 
-        DecimalFormat formatter = new DecimalFormat("#,###");
+        java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,###");
         return formatter.format(total) + " VND";
     }
 
     /**
      * Handle process checkout order
      */
-    public void processOrder(String paymentMethod) {
-        // TODO
-        String message = "Hệ thống đang xử lý đơn hàng...\nPhương thức thanh toán: " + paymentMethod;
-        view.showNotification(message, "Thành Công", 1);
+    public void processOrder(EPaymentMethod paymentMethod) {
+        List<Product> products = getMockOrderProducts();
+
+        EPaymentStatus paymentStatus;
+        if (paymentMethod == EPaymentMethod.BANK)
+            paymentStatus = EPaymentStatus.PAID;
+        else
+            paymentStatus = EPaymentStatus.PENDING;
+
+        Order order = new Order();
+        order.setId(1001L);
+        order.setPaymentMethod(paymentMethod);
+        order.setPaymentStatus(paymentStatus);
+        order.setCreatedAt(LocalDateTime.now());
+
+        List<OrderItem> items = new ArrayList<>();
+        double total = 0;
+
+        for (Product p : products) {
+            OrderItem item = new OrderItem();
+            item.setId((long) (Math.random() * 10000));
+            item.setProduct(p);
+            item.setQuantity(p.getQuantity());
+            item.setOrder(order);
+            items.add(item);
+
+            total += p.getTotalAmount();
+        }
+
+        order.setOrderItems(items);
+        order.setTotalAmount(total);
+
+        if (view != null) {
+            view.dispose();
+        }
+
+        OrderSuccessView successView = new OrderSuccessView(order, this);
+        successView.setVisible(true);
+    }
+
+    public void restartOrder() {
+        OrderPreparationView newView = new OrderPreparationView(this);
+        newView.setVisible(true);
     }
 }

@@ -5,6 +5,7 @@ import javax.swing.table.DefaultTableModel;
 
 import vn.com.controller.OrderController;
 import vn.com.model.Product;
+import vn.com.utils.EPaymentMethod;
 
 import java.awt.*;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
 public class OrderPreparationView extends JFrame {
 
     private JTable productTable;
-    private JComboBox<String> paymentMethodComboBox;
+    private JComboBox<EPaymentMethod> paymentMethodComboBox;
     private JButton placeOrderButton;
     private JLabel totalAmountLabel;
     private DefaultTableModel tableModel;
@@ -62,7 +63,7 @@ public class OrderPreparationView extends JFrame {
         totalAmountLabel.setForeground(Color.RED);
 
         infoPanel.add(new JLabel("Phương thức thanh toán:"));
-        String[] paymentMethods = { "Tiền mặt", "Chuyển khoản / Momo", "Thẻ tín dụng" };
+        EPaymentMethod[] paymentMethods = EPaymentMethod.values();
         paymentMethodComboBox = new JComboBox<>(paymentMethods);
 
         infoPanel.add(paymentMethodComboBox);
@@ -109,7 +110,7 @@ public class OrderPreparationView extends JFrame {
 
     private void setupListeners() {
         placeOrderButton.addActionListener(e -> {
-            String selectedPayment = (String) paymentMethodComboBox.getSelectedItem();
+            EPaymentMethod selectedPayment = (EPaymentMethod) paymentMethodComboBox.getSelectedItem();
 
             controller.processOrder(selectedPayment);
         });
