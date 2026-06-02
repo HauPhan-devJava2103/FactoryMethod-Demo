@@ -18,6 +18,10 @@ public class MockPaymentServer {
         this.port = preferredPort;
     }
 
+    /**
+     * Start mini server provide API /payment/success
+     * and callback (onPaymentSuccess) to OrderController when payment is successful
+     */
     public void start(Consumer<String> onPaymentSuccess) {
         try {
             server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
@@ -42,6 +46,11 @@ public class MockPaymentServer {
         return port;
     }
 
+    /**
+     * HTTP handler for /payment/success endpoint
+     * Get orderId from query URL, push html response to device which scanning QRcode
+     * and callback to function start()
+     */
     static class PaymentHandler implements HttpHandler {
         private final Consumer<String> onSuccess;
 
