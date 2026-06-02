@@ -4,8 +4,10 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
 import vn.com.controller.OrderController;
+import vn.com.model.Product;
 
 import java.awt.*;
+import java.util.List;
 
 public class OrderPreparationView extends JFrame {
 
@@ -84,9 +86,20 @@ public class OrderPreparationView extends JFrame {
      * Fetch data order prepare
      */
     private void loadOrderData() {
-        Object[][] products = controller.getMockOrderProducts();
+        List<Product> products = controller.getMockOrderProducts();
+        displayProducts(products);
+    }
 
-        for (Object[] row : products) {
+    public void displayProducts(List<Product> products) {
+        tableModel.setRowCount(0);
+        for (Product product : products) {
+            Object[] row = {
+                    "SP00" + product.getId(),
+                    product.getName(),
+                    product.getQuantity(),
+                    product.getPrice(),
+                    product.getTotalAmount()
+            };
             tableModel.addRow(row);
         }
 
