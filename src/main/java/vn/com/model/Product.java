@@ -26,10 +26,10 @@ public class Product {
 
     private Double price;
 
-    private Integer quantity;
+    private int quantity;
 
     public Double getTotalAmount() {
-        return price * quantity;
+        return Double.valueOf(price * quantity);
     }
 
 }
