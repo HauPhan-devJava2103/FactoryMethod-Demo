@@ -87,7 +87,7 @@ public class OrderPreparationView extends JFrame {
      * Fetch data order prepare
      */
     private void loadOrderData() {
-        List<Product> products = controller.getMockOrderProducts();
+        List<Product> products = controller.getProducts();
         displayProducts(products);
     }
 
