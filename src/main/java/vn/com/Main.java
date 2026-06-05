@@ -14,6 +14,9 @@ import vn.com.view.OrderPreparationView;
 public class Main {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "false");
+        new javafx.embed.swing.JFXPanel();
+        javafx.application.Platform.setImplicitExit(false);
+
         ApplicationContext context = SpringApplication.run(Main.class, args);
 
         OrderController controller = context.getBean(OrderController.class);

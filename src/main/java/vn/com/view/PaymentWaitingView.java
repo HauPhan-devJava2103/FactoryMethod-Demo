@@ -43,17 +43,12 @@ public class PaymentWaitingView extends JFrame {
 
         Platform.runLater(() -> {
             WebView webView = new WebView();
-            jfxPanel.setScene(new Scene(webView));
             webEngine = webView.getEngine();
 
-            webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-                if (newState == Worker.State.SUCCEEDED) {
-                    loadQrData();
-                }
-            });
-
             String url = getClass().getResource("/pages/payment-waiting.html").toExternalForm();
-            webEngine.load(url);
+            vn.com.view.utils.WebViewLoadingHelper.setupWebView(jfxPanel, webView, url, () -> {
+                loadQrData();
+            });
         });
     }
 

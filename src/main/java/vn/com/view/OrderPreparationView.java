@@ -39,19 +39,14 @@ public class OrderPreparationView extends JFrame {
 
         Platform.runLater(() -> {
             WebView webView = new WebView();
-            jfxPanel.setScene(new Scene(webView));
             webEngine = webView.getEngine();
 
-            webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-                if (newState == Worker.State.SUCCEEDED) {
-                    JSObject window = (JSObject) webEngine.executeScript("window");
-                    window.setMember("javaBridge", javaBridge);
-                    loadOrderData();
-                }
-            });
-
             String url = getClass().getResource("/pages/order-preparation.html").toExternalForm();
-            webEngine.load(url);
+            vn.com.view.utils.WebViewLoadingHelper.setupWebView(jfxPanel, webView, url, () -> {
+                netscape.javascript.JSObject window = (netscape.javascript.JSObject) webEngine.executeScript("window");
+                window.setMember("javaBridge", javaBridge);
+                loadOrderData();
+            });
         });
     }
 
