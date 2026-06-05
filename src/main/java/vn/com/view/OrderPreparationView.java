@@ -1,7 +1,14 @@
 package vn.com.view;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+
+import javafx.application.Platform;
+import javafx.concurrent.Worker;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
 
 import vn.com.controller.OrderController;
 import vn.com.model.Product;
@@ -12,114 +19,115 @@ import java.util.List;
 
 public class OrderPreparationView extends JFrame {
 
-    private JTable productTable;
-    private JComboBox<EPaymentMethod> paymentMethodComboBox;
-    private JButton placeOrderButton;
-    private JLabel totalAmountLabel;
-    private DefaultTableModel tableModel;
-
     private final OrderController controller;
+    private WebEngine webEngine;
+
+    private final JavaBridge javaBridge = new JavaBridge();
 
     public OrderPreparationView(OrderController controller) {
         this.controller = controller;
         this.controller.setView(this);
 
         setTitle("Chuẩn Bị Đơn Hàng");
-        setSize(800, 500);
+        setSize(1000, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
 
-        initComponents();
-        loadOrderData();
+        JFXPanel jfxPanel = new JFXPanel();
+        add(jfxPanel, BorderLayout.CENTER);
+        Platform.setImplicitExit(false);
+
+        Platform.runLater(() -> {
+            WebView webView = new WebView();
+            jfxPanel.setScene(new Scene(webView));
+            webEngine = webView.getEngine();
+
+            webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+                if (newState == Worker.State.SUCCEEDED) {
+                    JSObject window = (JSObject) webEngine.executeScript("window");
+                    window.setMember("javaBridge", javaBridge);
+                    loadOrderData();
+                }
+            });
+
+            String url = getClass().getResource("/pages/order-preparation.html").toExternalForm();
+            webEngine.load(url);
+        });
     }
 
-    private void initComponents() {
-        JLabel titleLabel = new JLabel("CHI TIẾT ĐƠN HÀNG", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        add(titleLabel, BorderLayout.NORTH);
-
-        String[] columnNames = { "Mã SP", "Tên Sản Phẩm", "Số Lượng", "Đơn Giá", "Thành Tiền" };
-        tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        productTable = new JTable(tableModel);
-        productTable.setRowHeight(25);
-        JScrollPane scrollPane = new JScrollPane(productTable);
-        add(scrollPane, BorderLayout.CENTER);
-
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 5));
-
-        totalAmountLabel = new JLabel("Tổng cộng: 0 VND");
-        totalAmountLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        totalAmountLabel.setForeground(Color.RED);
-
-        infoPanel.add(new JLabel("Phương thức thanh toán:"));
-        EPaymentMethod[] paymentMethods = EPaymentMethod.values();
-        paymentMethodComboBox = new JComboBox<>(paymentMethods);
-
-        infoPanel.add(paymentMethodComboBox);
-        infoPanel.add(totalAmountLabel);
-
-        placeOrderButton = new JButton("ĐẶT HÀNG");
-        placeOrderButton.setFont(new Font("Arial", Font.BOLD, 14));
-        placeOrderButton.setBackground(new Color(40, 167, 69));
-        placeOrderButton.setForeground(Color.WHITE);
-        placeOrderButton.setPreferredSize(new Dimension(150, 40));
-
-        bottomPanel.add(infoPanel, BorderLayout.CENTER);
-        bottomPanel.add(placeOrderButton, BorderLayout.EAST);
-
-        add(bottomPanel, BorderLayout.SOUTH);
-
-        setupListeners();
-    }
-
-    /**
-     * Fetch data order prepare
-     */
     private void loadOrderData() {
         List<Product> products = controller.getProducts();
         displayProducts(products);
     }
 
     public void displayProducts(List<Product> products) {
-        tableModel.setRowCount(0);
-        for (Product product : products) {
-            Object[] row = {
-                    "SP00" + product.getId(),
-                    product.getName(),
-                    product.getQuantity(),
-                    product.getPrice(),
-                    product.getTotalAmount()
-            };
-            tableModel.addRow(row);
+        try {
+            StringBuilder productsJson = new StringBuilder("[");
+            for (int i = 0; i < products.size(); i++) {
+                Product p = products.get(i);
+                productsJson.append("{")
+                        .append("\"id\":").append(p.getId()).append(",")
+                        .append("\"name\":\"").append(escapeJson(p.getName())).append("\",")
+                        .append("\"quantity\":").append(p.getQuantity()).append(",")
+                        .append("\"price\":").append(p.getPrice()).append(",")
+                        .append("\"totalAmount\":").append(p.getTotalAmount())
+                        .append("}");
+                if (i < products.size() - 1)
+                    productsJson.append(",");
+            }
+            productsJson.append("]");
+
+            StringBuilder paymentMethodsJson = new StringBuilder("[");
+            EPaymentMethod[] methods = EPaymentMethod.values();
+            for (int i = 0; i < methods.length; i++) {
+                paymentMethodsJson.append("{")
+                        .append("\"value\":\"").append(methods[i].name()).append("\",")
+                        .append("\"label\":\"").append(methods[i].name()).append("\"")
+                        .append("}");
+                if (i < methods.length - 1)
+                    paymentMethodsJson.append(",");
+            }
+            paymentMethodsJson.append("]");
+
+            String totalText = controller.calculateTotalAmount(products);
+
+            Platform.runLater(() -> {
+                webEngine.executeScript(String.format("initData('%s', '%s', '%s')",
+                        escapeJsString(productsJson.toString()),
+                        escapeJsString(paymentMethodsJson.toString()),
+                        escapeJsString(totalText)));
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        String totalText = controller.calculateTotalAmount(products);
-        totalAmountLabel.setText("Tổng cộng: " + totalText);
     }
 
-    private void setupListeners() {
-        placeOrderButton.addActionListener(e -> {
-            EPaymentMethod selectedPayment = (EPaymentMethod) paymentMethodComboBox.getSelectedItem();
-
-            controller.processOrder(selectedPayment);
-        });
-    }
-
-    /**
-     * Hook: show notification
-     */
     public void showNotification(String message, String title, int messageType) {
         JOptionPane.showMessageDialog(this, message, title, messageType);
+    }
+
+    private String escapeJson(String text) {
+        if (text == null)
+            return "";
+        return text.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private String escapeJsString(String text) {
+        if (text == null)
+            return "";
+        return text.replace("\\", "\\\\").replace("'", "\\'");
+    }
+
+    public class JavaBridge {
+        public void processOrder(String paymentMethodStr) {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    EPaymentMethod paymentMethod = EPaymentMethod.valueOf(paymentMethodStr);
+                    controller.processOrder(paymentMethod);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 }

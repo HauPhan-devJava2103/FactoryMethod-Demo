@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Hàng Thành Công</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 600px;">
+        <h2 style="color: var(--success-color);">ĐẶT HÀNG THÀNH CÔNG</h2>
+        
+        <div class="order-details">
+            <div class="detail-item">
+                <span class="detail-label">Mã đơn hàng</span>
+                <span class="detail-value" id="orderId"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Phương thức thanh toán</span>
+                <span class="detail-value" id="paymentMethod"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Trạng thái thanh toán</span>
+                <span class="detail-value" id="paymentStatus"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Ngày tạo</span>
+                <span class="detail-value" id="createdAt"></span>
+            </div>
+        </div>
+
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Tên Sản Phẩm</th>
+                    <th>Số Lượng</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody">
+                <!-- Data injected by JS -->
+            </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn" onclick="restartOrder()">Quay lại đặt hàng</button>
+        </div>
+    </div>
+
+    <script>
+        function restartOrder() {
+            if (window.javaBridge) {
+                window.javaBridge.restartOrder();
+            } else {
+                console.log("No JavaBridge found.");
+            }
+        }
+
+        // Called from Java
+        function initData(orderInfoJson, orderItemsJson) {
+            var orderInfo = JSON.parse(orderInfoJson);
+            var orderItems = JSON.parse(orderItemsJson);
+
+            document.getElementById('orderId').innerText = "#" + orderInfo.id;
+            document.getElementById('paymentMethod').innerText = orderInfo.paymentMethod;
+            document.getElementById('paymentStatus').innerText = orderInfo.paymentStatus;
+            document.getElementById('createdAt').innerText = orderInfo.createdAt;
+
+            var tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+            
+            orderItems.forEach(function(item) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = 
+                    '<td>' + item.productName + '</td>' +
+                    '<td>' + item.quantity + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
