@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuẩn Bị Đơn Hàng</title>
+    <link rel="preload" href="css/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="css/style.css"></noscript>
+</head>
+<body>
+    <div class="container">
+        <h2>CHI TIẾT ĐƠN HÀNG</h2>
+        
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Mã SP</th>
+                    <th>Tên Sản Phẩm</th>
+                    <th>Số Lượng</th>
+                    <th>Đơn Giá</th>
+                    <th>Thành Tiền</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody">
+                <!-- Data will be injected here by JavaBridge -->
+            </tbody>
+        </table>
+
+        <div class="footer-section">
+            <div class="info-group">
+                <label for="paymentMethod">Phương thức thanh toán:</label>
+                <select id="paymentMethod">
+                    <!-- Options injected by JS -->
+                </select>
+                <div class="total-amount" id="totalAmount">Tổng cộng: 0 VND</div>
+            </div>
+            
+            <button class="btn success" onclick="placeOrder()">ĐẶT HÀNG</button>
+        </div>
+    </div>
+
+    <script>
+        function placeOrder() {
+            var paymentMethod = document.getElementById('paymentMethod').value;
+            if (window.javaBridge) {
+                window.javaBridge.processOrder(paymentMethod);
+            } else {
+                console.log("No JavaBridge found. Payment Method: " + paymentMethod);
+            }
+        }
+
+        // This function will be called from Java after the page loads
+        function initData(productsJson, paymentMethodsJson, totalAmount) {
+            var products = JSON.parse(productsJson);
+            var paymentMethods = JSON.parse(paymentMethodsJson);
+            
+            var tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+            
+            products.forEach(function(product) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = 
+                    '<td>SP00' + product.id + '</td>' +
+                    '<td>' + product.name + '</td>' +
+                    '<td>' + product.quantity + '</td>' +
+                    '<td>' + product.price + '</td>' +
+                    '<td>' + product.totalAmount + '</td>';
+                tbody.appendChild(tr);
+            });
+
+            var select = document.getElementById('paymentMethod');
+            select.innerHTML = '';
+            paymentMethods.forEach(function(method) {
+                var option = document.createElement('option');
+                option.value = method.value;
+                option.text = method.label;
+                select.appendChild(option);
+            });
+
+            document.getElementById('totalAmount').innerText = "Tổng cộng: " + totalAmount;
+        }
+    </script>
+</body>
+</html>

@@ -1,9 +1,17 @@
 package vn.com.view;
 
+import javafx.application.Platform;
+import javafx.concurrent.Worker;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
+
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import vn.com.controller.OrderController;
 import vn.com.model.Order;
@@ -13,77 +21,90 @@ public class OrderSuccessView extends JFrame {
 
     private final Order order;
     private final OrderController controller;
+    private WebEngine webEngine;
+    private final JavaBridge javaBridge = new JavaBridge();
 
     public OrderSuccessView(Order order, OrderController controller) {
         this.order = order;
         this.controller = controller;
 
         setTitle("Đặt Hàng Thành Công");
-        setSize(600, 500);
+        setSize(600, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
 
-        initComponents();
+        JFXPanel jfxPanel = new JFXPanel();
+        add(jfxPanel, BorderLayout.CENTER);
+
+        Platform.runLater(() -> {
+            WebView webView = new WebView();
+            webEngine = webView.getEngine();
+
+            String url = getClass().getResource("/pages/order-success.html").toExternalForm();
+            vn.com.view.utils.WebViewLoadingHelper.setupWebView(jfxPanel, webView, url, () -> {
+                netscape.javascript.JSObject window = (netscape.javascript.JSObject) webEngine.executeScript("window");
+                window.setMember("javaBridge", javaBridge);
+                loadOrderData();
+            });
+        });
     }
 
-    private void initComponents() {
-        JLabel titleLabel = new JLabel("ĐẶT HÀNG THÀNH CÔNG", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
-        titleLabel.setForeground(new Color(40, 167, 69));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        add(titleLabel, BorderLayout.NORTH);
+    private void loadOrderData() {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            String createdAt = order.getCreatedAt() != null ? order.getCreatedAt().format(formatter) : "";
 
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 15));
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            StringBuilder orderInfoJson = new StringBuilder("{");
+            orderInfoJson.append("\"id\":\"").append(order.getId()).append("\",");
+            orderInfoJson.append("\"paymentMethod\":\"")
+                    .append(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : "").append("\",");
+            orderInfoJson.append("\"paymentStatus\":\"")
+                    .append(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : "").append("\",");
+            orderInfoJson.append("\"createdAt\":\"").append(createdAt).append("\"");
+            orderInfoJson.append("}");
 
-        JPanel infoPanel = new JPanel(new GridLayout(4, 1, 5, 5));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        String createdAt = order.getCreatedAt() != null ? order.getCreatedAt().format(formatter) : "";
-
-        infoPanel.add(new JLabel("Mã đơn hàng: #" + order.getId()));
-        infoPanel.add(new JLabel("Phương thức thanh toán: " + order.getPaymentMethod()));
-        infoPanel.add(new JLabel("Trạng thái thanh toán: " + order.getPaymentStatus()));
-        infoPanel.add(new JLabel("Ngày tạo: " + createdAt));
-
-        centerPanel.add(infoPanel, BorderLayout.NORTH);
-
-        String[] columnNames = { "Tên Sản Phẩm", "Số Lượng" };
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
+            StringBuilder itemsJson = new StringBuilder("[");
+            if (order.getOrderItems() != null) {
+                List<OrderItem> items = order.getOrderItems();
+                for (int i = 0; i < items.size(); i++) {
+                    OrderItem item = items.get(i);
+                    itemsJson.append("{")
+                            .append("\"productName\":\"").append(escapeJson(item.getProduct().getName())).append("\",")
+                            .append("\"quantity\":").append(item.getQuantity())
+                            .append("}");
+                    if (i < items.size() - 1)
+                        itemsJson.append(",");
+                }
             }
-        };
+            itemsJson.append("]");
 
-        if (order.getOrderItems() != null) {
-            for (OrderItem item : order.getOrderItems()) {
-                tableModel.addRow(new Object[] {
-                        item.getProduct().getName(),
-                        item.getQuantity()
-                });
-            }
+            Platform.runLater(() -> {
+                webEngine.executeScript(String.format("initData('%s', '%s')",
+                        escapeJsString(orderInfoJson.toString()), escapeJsString(itemsJson.toString())));
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
 
-        JTable productTable = new JTable(tableModel);
-        productTable.setRowHeight(25);
-        JScrollPane scrollPane = new JScrollPane(productTable);
-        centerPanel.add(scrollPane, BorderLayout.CENTER);
+    private String escapeJson(String text) {
+        if (text == null)
+            return "";
+        return text.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 
-        add(centerPanel, BorderLayout.CENTER);
+    private String escapeJsString(String text) {
+        if (text == null)
+            return "";
+        return text.replace("\\", "\\\\").replace("'", "\\'");
+    }
 
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
-        JButton backButton = new JButton("Quay lại đặt hàng");
-        backButton.setFont(new Font("Arial", Font.BOLD, 14));
-        backButton.setPreferredSize(new Dimension(200, 40));
-
-        backButton.addActionListener(e -> {
-            dispose();
-            controller.restartOrder();
-        });
-
-        bottomPanel.add(backButton);
-        add(bottomPanel, BorderLayout.SOUTH);
+    public class JavaBridge {
+        public void restartOrder() {
+            SwingUtilities.invokeLater(() -> {
+                dispose();
+                controller.restartOrder();
+            });
+        }
     }
 }

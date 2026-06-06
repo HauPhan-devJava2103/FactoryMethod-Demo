@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chờ Thanh Toán</title>
+    <link rel="preload" href="css/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="css/style.css"></noscript>
+</head>
+<body>
+    <div class="container" style="max-width: 500px;">
+        <h2>Thanh Toán Chuyển Khoản</h2>
+        
+        <div class="qr-container">
+            <img id="qrImage" src="" alt="QR Code" width="250" height="250" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: white;">
+            
+            <div style="text-align: center; margin-top: 10px;">
+                <p id="orderLabel" style="font-size: 1rem; color: var(--text-muted); margin-bottom: 8px;"></p>
+                <div id="statusLabel" class="status-text">Đang chờ quét mã...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Called from Java
+        function initData(orderId, base64QrImage) {
+            document.getElementById('orderLabel').innerText = "Mã đơn hàng: #" + orderId;
+            document.getElementById('qrImage').src = "data:image/png;base64," + base64QrImage;
+        }
+
+        // Called from Java
+        function updateStatus(status, colorHex) {
+            var statusEl = document.getElementById('statusLabel');
+            statusEl.innerText = status;
+            statusEl.style.color = colorHex;
+            if (colorHex === '#00FF00' || colorHex === '#008000') {
+                statusEl.classList.add('success');
+            }
+        }
+    </script>
+</body>
+</html>
