@@ -62,6 +62,7 @@ public class OrderController {
             SwingUtilities.invokeLater(() -> {
                 waitingView.updateStatus("Đã thanh toán!", Color.GREEN);
                 order.setPaymentStatus(EPaymentStatus.PAID);
+                orderService.updatePaymentStatus(order.getId(), EPaymentStatus.PAID);
                 Timer timer = new Timer(1500, e -> {
                     waitingView.dispose();
                     server.stop();

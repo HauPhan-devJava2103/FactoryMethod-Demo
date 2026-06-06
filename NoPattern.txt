@@ -1,0 +1,11 @@
+    // Cách cũ - vi phạm OCP
+    public PaymentResult processPayment(Order order, EPaymentMethod method) {
+        if (method == EPaymentMethod.COD) {
+            // xử lý COD...
+        } else if (method == EPaymentMethod.BANK) {
+            // xử lý Bank...
+        }
+        // Thêm MOMO
+        // phải sửa method này
+    }
+

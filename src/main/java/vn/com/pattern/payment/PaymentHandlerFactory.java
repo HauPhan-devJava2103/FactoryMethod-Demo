@@ -14,6 +14,7 @@ public class PaymentHandlerFactory {
 
     private final Map<EPaymentMethod, IPaymentHandler> handlerMap;
 
+    // handerMap = {COD: CodPaymentHandler, BANK: BankPaymentHandler}
     public PaymentHandlerFactory(List<IPaymentHandler> handlers) {
         this.handlerMap = handlers.stream()
                 .collect(Collectors.toMap(IPaymentHandler::getPaymentMethod, Function.identity()));
