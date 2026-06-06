@@ -34,19 +34,6 @@ public class OrderService implements IOrderService {
         return new DecimalFormat("#,###").format(total) + " VND";
     }
 
-    /*
-     * // Cách cũ - vi phạm OCP
-     * public PaymentResult processPayment(Order order, EPaymentMethod method) {
-     * if (method == EPaymentMethod.COD) {
-     * // xử lý COD...
-     * } else if (method == EPaymentMethod.BANK) {
-     * // xử lý Bank...
-     * }
-     * // Thêm MOMO
-     * // phải sửa method này
-     * }
-     */
-
     @Override
     public Order processOrder(EPaymentMethod paymentMethod) {
         List<Product> products = productRepository.findAll();

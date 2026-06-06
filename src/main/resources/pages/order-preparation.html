@@ -22,7 +22,6 @@
                 </tr>
             </thead>
             <tbody id="productTableBody">
-                <!-- Data will be injected here by JavaBridge -->
             </tbody>
         </table>
 
@@ -30,7 +29,6 @@
             <div class="info-group">
                 <label for="paymentMethod">Phương thức thanh toán:</label>
                 <select id="paymentMethod">
-                    <!-- Options injected by JS -->
                 </select>
                 <div class="total-amount" id="totalAmount">Tổng cộng: 0 VND</div>
             </div>
@@ -49,7 +47,6 @@
             }
         }
 
-        // This function will be called from Java after the page loads
         function initData(productsJson, paymentMethodsJson, totalAmount) {
             var products = JSON.parse(productsJson);
             var paymentMethods = JSON.parse(paymentMethodsJson);

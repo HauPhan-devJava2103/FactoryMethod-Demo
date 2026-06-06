@@ -22,13 +22,11 @@
     </div>
 
     <script>
-        // Called from Java
         function initData(orderId, base64QrImage) {
             document.getElementById('orderLabel').innerText = "Mã đơn hàng: #" + orderId;
             document.getElementById('qrImage').src = "data:image/png;base64," + base64QrImage;
         }
 
-        // Called from Java
         function updateStatus(status, colorHex) {
             var statusEl = document.getElementById('statusLabel');
             statusEl.innerText = status;

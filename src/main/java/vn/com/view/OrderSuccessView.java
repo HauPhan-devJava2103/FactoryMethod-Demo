@@ -1,12 +1,9 @@
 package vn.com.view;
 
 import javafx.application.Platform;
-import javafx.concurrent.Worker;
 import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import netscape.javascript.JSObject;
 
 import javax.swing.*;
 import java.awt.*;

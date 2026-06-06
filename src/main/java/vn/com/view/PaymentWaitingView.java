@@ -8,9 +8,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 import javafx.application.Platform;
-import javafx.concurrent.Worker;
 import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
