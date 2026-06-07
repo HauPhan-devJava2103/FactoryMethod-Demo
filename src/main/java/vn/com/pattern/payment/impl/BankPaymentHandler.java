@@ -5,18 +5,12 @@ import org.springframework.stereotype.Component;
 import vn.com.dto.PaymentResult;
 import vn.com.model.Order;
 import vn.com.pattern.payment.IPaymentHandler;
-import vn.com.utils.EPaymentMethod;
 import vn.com.utils.EPaymentStatus;
 import vn.com.utils.IpUtil;
 
 @Component
 public class BankPaymentHandler implements IPaymentHandler {
     private static final int SERVER_PORT = 8080;
-
-    @Override
-    public EPaymentMethod getPaymentMethod() {
-        return EPaymentMethod.BANK;
-    }
 
     @Override
     public PaymentResult processPayment(Order order) {

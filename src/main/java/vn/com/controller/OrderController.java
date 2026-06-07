@@ -9,6 +9,8 @@ import javax.swing.Timer;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import vn.com.dto.OrderPaymentResult;
+import vn.com.dto.PaymentResult;
 import vn.com.model.Order;
 import vn.com.model.Product;
 import vn.com.server.MockPaymentServer;
@@ -16,7 +18,6 @@ import vn.com.service.order.IOrderService;
 import vn.com.service.product.IProductService;
 import vn.com.utils.EPaymentMethod;
 import vn.com.utils.EPaymentStatus;
-import vn.com.utils.IpUtil;
 import vn.com.view.OrderPreparationView;
 import vn.com.view.OrderSuccessView;
 import vn.com.view.PaymentWaitingView;
@@ -41,21 +42,20 @@ public class OrderController {
     }
 
     public void processOrder(EPaymentMethod paymentMethod) {
-        Order order = orderService.processOrder(paymentMethod);
+        OrderPaymentResult orderPaymentResult = orderService.processOrder(paymentMethod);
+        Order order = orderPaymentResult.getOrder();
+        PaymentResult paymentResult = orderPaymentResult.getPaymentResult();
         if (view != null)
             view.dispose();
-        if (order.getPaymentStatus() == EPaymentStatus.PENDING) {
-            showBankPaymentFlow(order);
+        if (paymentResult.getStatus() == EPaymentStatus.PENDING) {
+            showPaymentWaitingFlow(order, paymentResult.getPaymentUrl());
         } else {
             new OrderSuccessView(order, this).setVisible(true);
         }
     }
 
-    private void showBankPaymentFlow(Order order) {
+    private void showPaymentWaitingFlow(Order order, String paymentUrl) {
         MockPaymentServer server = new MockPaymentServer(8080);
-        String ip = IpUtil.getLocalIpAddress();
-        String paymentUrl = "http://" + ip + ":" + server.getPort()
-                + "/payment/success?orderId=" + order.getId();
         PaymentWaitingView waitingView = new PaymentWaitingView(order.getId(), paymentUrl);
         waitingView.setVisible(true);
         server.start(orderIdStr -> {

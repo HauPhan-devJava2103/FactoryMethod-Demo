@@ -8,12 +8,12 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import vn.com.dto.OrderPaymentResult;
 import vn.com.dto.PaymentResult;
 import vn.com.model.Order;
 import vn.com.model.OrderItem;
 import vn.com.model.Product;
-import vn.com.pattern.payment.IPaymentHandler;
-import vn.com.pattern.payment.PaymentHandlerFactory;
+import vn.com.pattern.payment.PaymentHandlerCreatorRegistry;
 import vn.com.repository.OrderRepository;
 import vn.com.repository.ProductRepository;
 import vn.com.utils.EPaymentMethod;
@@ -25,7 +25,7 @@ public class OrderService implements IOrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final PaymentHandlerFactory paymentFactory;
+    private final PaymentHandlerCreatorRegistry paymentHandlerCreatorRegistry;
 
     @Override
     public String calculateTotalAmount(List<Product> products) {
@@ -48,7 +48,7 @@ public class OrderService implements IOrderService {
      */
 
     @Override
-    public Order processOrder(EPaymentMethod paymentMethod) {
+    public OrderPaymentResult processOrder(EPaymentMethod paymentMethod) {
         List<Product> products = productRepository.findAll();
 
         double total = products.stream().mapToDouble(p -> p.getPrice()).sum();
@@ -71,10 +71,12 @@ public class OrderService implements IOrderService {
         order.setOrderItems(items);
         orderRepository.save(order);
 
-        IPaymentHandler handler = paymentFactory.getHandler(paymentMethod);
-        PaymentResult result = handler.processPayment(order);
+        PaymentResult result = paymentHandlerCreatorRegistry.processPayment(paymentMethod, order);
         orderRepository.updatePaymentStatus(order.getId(), result.getStatus());
-        return order;
+        return OrderPaymentResult.builder()
+                .order(order)
+                .paymentResult(result)
+                .build();
 
     }
 
